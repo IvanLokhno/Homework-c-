@@ -6,7 +6,7 @@ using namespace std;
  /////////////////////////  Класс Lex  //////////////////////////
  
 
-Lex::Lex ( type_of_lex t, int v, int str, int chr, string v_str): t_lex (t), v_lex (v), str_lex (str), chr_lex (chr), str_v_lex(v_str) { }
+Lex::Lex ( type_of_lex t, int v, string v_str, int str, int chr): t_lex (t), v_lex (v), str_v_lex(v_str), str_lex (str), chr_lex (chr) { }
 type_of_lex  Lex::get_type ()  
 { 
 	return t_lex; 
@@ -59,15 +59,15 @@ type_of_lex Ident::get_type    ()
 { 
 	return type; 
 }
-void  Ident::put_type    (type_of_lex t) 
+void Ident::put_type    (type_of_lex t) 
 { 
 	type = t; 
 }
-bool  Ident::get_assign  () 
+bool Ident::get_assign  () 
 { 
 	return assign; 
 }
-void  Ident::put_assign  ()
+void Ident::put_assign  ()
 { 
 	assign = true; 
 }
@@ -218,7 +218,7 @@ Lex Scanner::get_lex ()
 		switch(CS)
 		{
 			case H:
-				if ( c==' ') 
+				if ( c ==' ') 
 				{
 					gc();
 				}
@@ -226,7 +226,7 @@ Lex Scanner::get_lex ()
 				{
 					gc();
 				}
-				else if (c== '\t')
+				else if (c == '\t')
 				{
 					gc();
 				}
@@ -243,23 +243,23 @@ Lex Scanner::get_lex ()
 					gc();
 					CS = NUMB;
 				}
-				else if ( c== '<' || c== '>' )
+				else if ( c == '<' || c == '>' )
 				{ 
 					clear(); 
 					add(); 
 					gc();
 					CS = ALE; 
 				}
-				else if ( c== '"')
+				else if ( c == '"')
 				{ 
 					clear(); 
-					add(); 
+					// add(); 
 					gc(); 
 					CS = STR; 
 				}
 				else if (c == EOF)
 				{
-					return Lex(LEX_FIN, 0, str, chr);
+					return Lex(LEX_FIN, 0, st, str, chr);
 				}
 				else if (c == '!')
 				{
@@ -268,17 +268,24 @@ Lex Scanner::get_lex ()
 					gc();
 					CS = NEQ;
 				}
+				else if (c == '/')
+				{
+					clear();
+					gc();
+					CS = COMMENT_1;
+				}
 				else 
 					CS = DELIM;
 				break;
 
 			case IDENT:
+				j = look (buf, TW);
 				if ( isalpha(c) || isdigit(c) ) 
 				{
 					add(); 
 					gc();
 				}
-				else if ( j = look (buf, TW) )
+				else if (j)
 				{
 					cout.width(15);
 					cout << buf;
@@ -290,7 +297,7 @@ Lex Scanner::get_lex ()
 					cout << str1;
 					cout.width(5);
 					cout << chr1 - buf_top + 1<< endl;
-					return Lex (words[j], j, str1, chr1 - buf_top + 1);
+					return Lex (words[j], j, st, str1, chr1 - buf_top + 1);
 				}
 				else
 				{
@@ -305,7 +312,7 @@ Lex Scanner::get_lex ()
 					cout << str1;
 					cout.width(5);
 					cout << chr1 - buf_top + 1<< endl;
-					return Lex (LEX_ID, j, str1, chr1 - buf_top + 1);
+					return Lex (LEX_ID, j, st, str1, chr1 - buf_top + 1);
 				}
 				break;
 
@@ -326,7 +333,7 @@ Lex Scanner::get_lex ()
 					cout << str1;
 					cout.width(5);
 					cout << chr1 - buf_top + 1<< endl;
-					return Lex (LEX_NUM, d, str1, chr1 - buf_top + 1);
+					return Lex (LEX_NUM, d, st, str1, chr1 - buf_top + 1);
 				}
 				break;
 
@@ -346,7 +353,7 @@ Lex Scanner::get_lex ()
 					cout << str1;
 					cout.width(5);
 					cout << chr1 - buf_top + 1<< endl;
-					return Lex ( dlms[j], j, str1, chr1 - buf_top + 1);
+					return Lex ( dlms[j], j, st, str1, chr1 - buf_top + 1);
 				}
 				else
 				{
@@ -361,19 +368,22 @@ Lex Scanner::get_lex ()
 					cout << str1;
 					cout.width(5);
 					cout << chr1 - buf_top + 1<< endl;
-					return Lex ( dlms[j], j, str1, chr1 - buf_top + 1);
+					return Lex ( dlms[j], j, st,str1, chr1 - buf_top + 1);
 				}
 				break;
 
 			case STR:
-				if ( c != '"' ) 
+				if ( c == EOF) 
+				{
+					throw " LEX ERROR: no end of string";
+				} else if ( c != '"' ) 
 				{
 					add();
 					gc();
 				}
 				else
 				{
-					add();
+					// add();
 					gc();
 					cout.width(15);
 					cout << buf;
@@ -385,7 +395,57 @@ Lex Scanner::get_lex ()
 					cout << str1;
 					cout.width(5);
 					cout << chr1 - buf_top + 1<< endl;
-					return Lex (LEX_STR, 0, str1, chr1 - buf_top + 1, buf);
+					return Lex (LEX_STR, 0, buf, str1, chr1 - buf_top + 1);
+				}
+				break;
+
+			case COMMENT_1:
+				if (c == EOF) 
+				{
+					throw " LEX ERROR: unexpected '/' in the end";
+				} else if ( c == '*' ) 
+				{
+					gc();
+					CS = COMMENT_2;
+				}
+				else
+				{
+					throw " LEX ERROR: expected '*' after '/'";
+				}
+				break;
+
+			case COMMENT_2:
+				if (c == EOF) 
+				{
+					throw " LEX ERROR: no end of comment";
+				} else if ( c == '*' ) 
+				{
+					gc();
+					CS = COMMENT_3;
+				}
+				else
+				{
+					gc();
+				}
+				break;
+
+			case COMMENT_3:
+				if (c == EOF) 
+				{
+					throw " LEX ERROR: no end of comment";
+				} else if ( c == '/' ) 
+				{
+					gc();
+					CS = H;
+				}
+				else if ( c == "*")
+				{
+					gc();
+				}
+				else
+				{
+					gc();
+					CS = COMMENT_2;
 				}
 				break;
 
@@ -405,7 +465,7 @@ Lex Scanner::get_lex ()
 					cout << str1;
 					cout.width(5);
 					cout << chr1 - buf_top + 1<< endl;
-					return Lex ( LEX_NEQ, j, str1, chr1 - buf_top + 1);
+					return Lex ( LEX_NEQ, j, st, str1, chr1 - buf_top + 1);
 				}
 				else
 				{
@@ -416,7 +476,8 @@ Lex Scanner::get_lex ()
 			case DELIM:
 				clear();
 				add();
-				if ( j = look ( buf, TD) )
+				j = look ( buf, TD);
+				if (j)
 				{
 					gc();
 					cout.width(15);
@@ -429,7 +490,7 @@ Lex Scanner::get_lex ()
 					cout << str1;
 					cout.width(5);
 					cout << chr1 - buf_top + 1<< endl;
-					return Lex ( dlms[j], j, str1, chr1 - buf_top + 1);
+					return Lex ( dlms[j], j, st, str1, chr1 - buf_top + 1);
 				}
 				else
 				{
