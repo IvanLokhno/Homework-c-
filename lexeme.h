@@ -17,9 +17,13 @@ enum type_of_lex
 	LEX_NUM, /*36*/
 	LEX_ID, /*37*/
 	LEX_STR, /*38*/
-	LEX_ABGDV
+	POLIZ_LABEL, /*39*/
+  	POLIZ_ADDRESS, /*40*/
+  	POLIZ_GO, /*41*/
+  	POLIZ_FGO /*42*/
  };				
  /////////////////////////  Класс Lex  //////////////////////////
+ string st = " ";
 class Lex
 {
 	type_of_lex t_lex;
@@ -28,7 +32,7 @@ class Lex
 	int str_lex;
 	int chr_lex;
 public:
-	Lex ( type_of_lex t = LEX_NULL, int v = 0, int str = 0, int chr = 0, string v_str = "@");
+	Lex ( type_of_lex t = LEX_NULL, int v = 0, string v_str = "@", int str = 0, int chr = 0);
 	type_of_lex  get_type ();
 	int get_value ();
 	int get_str ();
@@ -54,6 +58,7 @@ class Ident
 	type_of_lex  type;
 	bool         assign;
 	int          value;
+	string       str_value;
 public:
 	Ident();
 	char       * get_name ();
@@ -67,6 +72,7 @@ public:
 	int          get_value   ();
 	void         put_value   (int v);
 };
+
 //////////////////////  Класс Tabl_ident  ///////////////////////
 class Tabl_ident
 {
@@ -79,13 +85,14 @@ public:
 	Ident      & operator[] ( int k );
 	int          put ( const char *buf );
 };
+
 /////////////////////  Класс Scanner  //////////////////////////////
 class Scanner
 {
 public:
 	enum state 
 	{ 
-		H, IDENT, NUMB, STR, ALE, DELIM, NEQ 
+		H, IDENT, NUMB, STR, ALE, DELIM, NEQ,COMMENT_1, COMMENT_2, COMMENT_3
 	};
 	static const char       * TW    [];
 	static type_of_lex  words [];
