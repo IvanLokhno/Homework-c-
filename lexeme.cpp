@@ -1,4 +1,4 @@
-#include "lexeme.h"
+#include "lexeme.h" 
  
 using namespace std;
 			
@@ -75,9 +75,17 @@ int Ident::get_value   ()
 { 
 	return value; 
 }
+string Ident::get_string   () 
+{ 
+	return str_value; 
+}
 void Ident::put_value   (int v)
 { 
 	value = v; 
+}
+void Ident::put_value   (string v)
+{ 
+	str_value = v; 
 }
 
 
@@ -243,7 +251,7 @@ Lex Scanner::get_lex ()
 					gc();
 					CS = NUMB;
 				}
-				else if ( c == '<' || c == '>' )
+				else if ( c == '<' || c == '>' || c == '=')
 				{ 
 					clear(); 
 					add(); 
@@ -287,11 +295,11 @@ Lex Scanner::get_lex ()
 				}
 				else if (j)
 				{
-					cout.width(15);
+					cout.width(25);
 					cout << buf;
 					cout.width(20);
 					cout << TW1[j];
-					cout.width(10);
+					cout.width(25);
 					cout << j;
 					cout.width(5);
 					cout << str1;
@@ -302,11 +310,11 @@ Lex Scanner::get_lex ()
 				else
 				{
 					j = TID.put(buf);
-					cout.width(15);
+					cout.width(25);
 					cout << buf;
 					cout.width(20);
 					cout << "LEX_ID";
-					cout.width(10);
+					cout.width(25);
 					cout << j;
 					cout.width(5);
 					cout << str1;
@@ -323,11 +331,11 @@ Lex Scanner::get_lex ()
 				}
 				else
 				{
-					cout.width(15);
+					cout.width(25);
 					cout << d;
 					cout.width(20);
 					cout <<  "LEX_NUM" ;
-					cout.width(10);
+					cout.width(25);
 					cout <<  d;
 					cout.width(5);
 					cout << str1;
@@ -343,11 +351,11 @@ Lex Scanner::get_lex ()
 					add();
 					gc();
 					j = look ( buf, TD );
-					cout.width(15);
+					cout.width(25);
 					cout << buf;
 					cout.width(20);
 					cout << TD1[j];
-					cout.width(10);
+					cout.width(25);
 					cout << j;
 					cout.width(5);
 					cout << str1;
@@ -358,11 +366,11 @@ Lex Scanner::get_lex ()
 				else
 				{
 					j = look ( buf, TD );
-					cout.width(15);
+					cout.width(25);
 					cout << buf;
 					cout.width(20);
 					cout << TD1[j];
-					cout.width(10);
+					cout.width(25);
 					cout << j;
 					cout.width(5);
 					cout << str1;
@@ -385,11 +393,11 @@ Lex Scanner::get_lex ()
 				{
 					// add();
 					gc();
-					cout.width(15);
+					cout.width(25);
 					cout << buf;
 					cout.width(20);
 					cout <<  "LEX_STR" ;
-					cout.width(10);
+					cout.width(25);
 					cout <<  buf;
 					cout.width(5);
 					cout << str1;
@@ -438,7 +446,7 @@ Lex Scanner::get_lex ()
 					gc();
 					CS = H;
 				}
-				else if ( c == "*")
+				else if ( c == '*')
 				{
 					gc();
 				}
@@ -455,11 +463,11 @@ Lex Scanner::get_lex ()
 					add();
 					gc();
 					j = look ( buf, TD );
-					cout.width(15);
+					cout.width(25);
 					cout << buf;
 					cout.width(20);
 					cout << "LEX_NEQ";
-					cout.width(10);
+					cout.width(25);
 					cout << j;
 					cout.width(5);
 					cout << str1;
@@ -480,11 +488,11 @@ Lex Scanner::get_lex ()
 				if (j)
 				{
 					gc();
-					cout.width(15);
+					cout.width(25);
 					cout << buf;
 					cout.width(20);
 					cout << TD1[j];
-					cout.width(10);
+					cout.width(25);
 					cout << j;
 					cout.width(5);
 					cout << str1;
