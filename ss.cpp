@@ -1,4 +1,4 @@
-#include "ss.h"
+#include "ss.h" 
 
 using namespace std;
 
@@ -30,17 +30,15 @@ T Stack < T, max_size > :: pop ()
 
 /////////////////////////////////////////////////////////////////
 
-void 
-Parser::analyze ()
+void Parser::analyze ()
 {
     gl();
     P();
-    // prog.print();
-    cout << endl << "OK!!!" << endl;
+    prog.print();
+    // cout << endl << "OK!!!" << endl;
 }
  
-void 
-Parser::P ()
+void Parser::P ()
 {
     // cout << "P\n";
     if (c_type == LEX_PROGRAM)
@@ -67,8 +65,7 @@ Parser::P ()
         throw curr_lex;
 }
  
-void 
-Parser::D1 ()
+void Parser::D1 ()
 {
     // cout << "D1\n";
     while (c_type == LEX_INT || c_type == LEX_STRING || c_type == LEX_BOOLEAN)
@@ -83,8 +80,7 @@ Parser::D1 ()
     }
 }
 
-void 
-Parser::D ()
+void Parser::D ()
 {
     // cout << "D\n";
     st_int.reset();
@@ -108,12 +104,13 @@ Parser::D ()
     dec(tmp_type);
 }
 
-void 
-Parser::I1 ()
+void Parser::I1 ()
 {
     // cout << "I1\n";
+    int val = c_val;
     if (c_type == LEX_ID)
     {
+
         st_int.push (c_val);
         gl(); 
     } else 
@@ -121,13 +118,21 @@ Parser::I1 ()
         throw curr_lex;
     } 
     if (c_type == LEX_EQ) {
+        prog.put_lex (Lex (POLIZ_ADDRESS, val));
         gl();
         CONST_();
+        if (tmp_type == LEX_STR) 
+        {
+            prog.put_lex (Lex(LEX_EQ_STR));
+        }
+        else
+        {
+            prog.put_lex (Lex(LEX_EQ));
+        }
     }
 }
 
-void 
-Parser::CONST_ ()
+void Parser::CONST_ ()
 {
     // cout << "CONST\n";
     if (c_type == LEX_PLUS || c_type == LEX_MINUS)
@@ -139,7 +144,6 @@ Parser::CONST_ ()
             {
                 throw "SEMANTIC ERROR: cannot initialize a variable of non type 'int' with an lvalue of type 'int'";
             }
-            gl();
         } else
         {
             throw curr_lex;
@@ -150,15 +154,24 @@ Parser::CONST_ ()
         {
             throw "SEMANTIC ERROR: cannot initialize a variable of non type 'string' with an lvalue of type 'string'";
         }
-        gl();
-    } else  
+
+    } else if (c_type == LEX_TRUE || c_type == LEX_FALSE)
+    {
+        if (tmp_type != LEX_BOOLEAN)
+        {
+            throw "SEMANTIC ERROR: cannot initialize a variable of non type 'boolean' with an lvalue of type 'boolean'";
+        }
+
+    }
+    else  
     {
         throw curr_lex;
     }
+    prog.put_lex (curr_lex);
+    gl();
 }
 
-void 
-Parser::S1 ()
+void Parser::S1 ()
 {
     // cout << "S1\n";
     while (c_type == LEX_IF || c_type == LEX_WHILE || c_type == LEX_READ || \
@@ -169,11 +182,11 @@ Parser::S1 ()
     } 
 }
 
-void 
-Parser::S ()
+void Parser::S ()
 {
     // cout << "S\n";
     int pl0, pl1, pl2, pl3;
+    //-------------------------------------------------------------------------------
     if (c_type == LEX_IF)
     {
         gl();
@@ -211,6 +224,7 @@ Parser::S ()
             prog.put_lex (Lex(POLIZ_LABEL, prog.get_free()), pl2);
         }
     }//end_if
+    //-------------------------------------------------------------------------------
     else if (c_type == LEX_WHILE)
     {
         pl0 = prog.get_free();
@@ -237,6 +251,7 @@ Parser::S ()
         prog.put_lex (Lex (POLIZ_GO));
         prog.put_lex (Lex (POLIZ_LABEL, prog.get_free()), pl1);
     }//end_while
+    //-------------------------------------------------------------------------------
     else if (c_type == LEX_READ)
     {
         gl();
@@ -268,6 +283,7 @@ Parser::S ()
         else
             throw curr_lex;
     }//end read
+    //-------------------------------------------------------------------------------
     else if (c_type == LEX_WRITE)
     {
         gl();
@@ -278,10 +294,12 @@ Parser::S ()
         else
             throw curr_lex;
         E();
+        prog.put_lex(Lex(LEX_WRITE));
         while (c_type == LEX_COMMA) 
         {
             gl();
             E();
+            prog.put_lex(Lex(LEX_WRITE));
         }
         if ( c_type == LEX_RPAREN )
         {
@@ -292,11 +310,11 @@ Parser::S ()
         if ( c_type == LEX_SEMICOLON )
         {
             gl();
-            prog.put_lex(Lex(LEX_WRITE));
         }
         else
             throw curr_lex;
     }//end write
+    //-------------------------------------------------------------------------------
     else if ( c_type == LEX_ID )
     {
         check_id ();
@@ -313,11 +331,11 @@ Parser::S ()
         if (c_type == LEX_SEMICOLON)
         {
             gl();
-            prog.put_lex(Lex(LEX_EQ));
         }
         else
             throw curr_lex;
     }//assign-end
+    //-------------------------------------------------------------------------------
     else if (c_type == LEX_LCBR) 
     {
         gl();
@@ -330,6 +348,7 @@ Parser::S ()
             throw curr_lex;
 
     } //составной оператор end
+    //-------------------------------------------------------------------------------
     else if (c_type == LEX_BREAK)
     {
         pl1 = prog.get_free();
@@ -337,8 +356,10 @@ Parser::S ()
         prog.put_lex (Lex(POLIZ_GO));
         gl();
     } // break
+    //-------------------------------------------------------------------------------
     else if (c_type == LEX_DO) 
     {
+        pl0 = prog.get_free();
         gl();
         S();
         if ( c_type == LEX_WHILE )
@@ -355,21 +376,26 @@ Parser::S ()
             throw curr_lex;
         E();
         eq_bool();
+        pl1 = prog.get_free(); 
+        prog.blank();
+        prog.put_lex(Lex(POLIZ_FGO));
+        prog.put_lex (Lex (POLIZ_LABEL, pl0));
+        prog.put_lex (Lex (POLIZ_GO));
         if ( c_type == LEX_RPAREN )
         {
             gl();
         }
         else
             throw curr_lex;
-
+        prog.put_lex (Lex (POLIZ_LABEL, prog.get_free()), pl1);
     } // do s while (E)
+    //-------------------------------------------------------------------------------
     else
         throw curr_lex;
 
 
 }
-void 
-Parser::E () 
+void Parser::E () 
 {
     // cout << "E\n";
     E1();
@@ -383,8 +409,7 @@ Parser::E ()
     }
 }
  
-void 
-Parser::E1 ()
+void Parser::E1 ()
 {
     // cout << "E1\n";
     T();
@@ -397,8 +422,7 @@ Parser::E1 ()
     }
 }
  
-void 
-Parser::T ()
+void Parser::T ()
 {
     // cout << "T\n";
     F();
@@ -411,8 +435,7 @@ Parser::T ()
     }
 }
  
-void 
-Parser::F () 
+void Parser::F () 
 {
     // cout << "F\n";
     if ( c_type == LEX_STR ) 
@@ -424,7 +447,12 @@ Parser::F ()
     else if ( c_type == LEX_ID ) 
     {
         check_id();
-        prog.put_lex (Lex (LEX_ID, c_val, c_string_val));
+        if (TID[c_val].get_type() == LEX_STR)
+        {
+            prog.put_lex (Lex (LEX_ID_STR, c_val, c_string_val));
+        } else {
+            prog.put_lex (Lex (LEX_ID, c_val));
+        }   
         gl();
     }
     else if ( c_type == LEX_NUM ) 
@@ -465,7 +493,6 @@ Parser::F ()
 }
 
 ////////////////////////////////////////////////////////////////
- 
 void Parser::dec ( type_of_lex type ) 
 {
     int i;
@@ -484,8 +511,10 @@ void Parser::dec ( type_of_lex type )
  
 void Parser::check_id () 
 {
-    if ( TID[c_val].get_declare() )
+    if ( TID[c_val].get_declare() ) 
+    {
         st_lex.push ( TID[c_val].get_type() );
+    }
     else 
         throw "SEMANTIC ERROR: ID wasn't declared";
 }
@@ -507,14 +536,31 @@ void Parser::check_op ()
     {
         if (t1 == LEX_STR) 
         {
-            if (op == LEX_LSS || op == LEX_GTR || \
-             op == LEX_NEQ ||  op == LEX_EQEQ)
+            if (op == LEX_EQEQ)
             {
                 st_lex.push(LEX_BOOLEAN);
+                prog.put_lex (Lex(LEX_EQEQ_STR));
             } 
+            else if (op == LEX_LSS)
+            {
+                st_lex.push(LEX_BOOLEAN);
+                prog.put_lex (Lex(LEX_LSS_STR));
+            }
+            else if (op == LEX_GTR)
+            {
+                st_lex.push(LEX_BOOLEAN);
+                prog.put_lex (Lex(LEX_GTR_STR));
+            } 
+            else if (op == LEX_NEQ)
+            {
+                st_lex.push(LEX_BOOLEAN);
+                prog.put_lex (Lex(LEX_NEQ_STR));
+            }  
+
             else if (op == LEX_PLUS)
             {
                 st_lex.push(LEX_STR);
+                prog.put_lex (Lex(LEX_PLUS_STR));
             } 
             else
                 throw "SEMANTIC ERROR: inccorect operation with strings";
@@ -524,6 +570,7 @@ void Parser::check_op ()
             if (op == LEX_AND|| op == LEX_OR)
             {
                 st_lex.push(LEX_BOOLEAN);
+                prog.put_lex (Lex(op));
             } 
             else
                 throw "SEMANTIC ERROR: inccorect operation with boolean";
@@ -540,11 +587,9 @@ void Parser::check_op ()
             {
                 st_lex.push(LEX_INT);
             }
+            prog.put_lex (Lex(op));
         } 
     }
-    prog.put_lex (Lex(op));
-    
-
 }
  
 void Parser::check_not () 
@@ -560,8 +605,18 @@ void Parser::check_not ()
  
 void Parser::eq_type () 
 {
-    if (st_lex.pop() != st_lex.pop())
+    type_of_lex t1;
+    t1 = st_lex.pop();
+    if (t1 != st_lex.pop())
         throw "SEMANTIC ERROR: inccorect types, operation \"=\" ";
+    if (t1 == LEX_STR) 
+    {
+        prog.put_lex(Lex(LEX_EQ_STR));
+    }
+    else
+    {
+        prog.put_lex(Lex(LEX_EQ));
+    }
 }
  
 void Parser::eq_bool () 
@@ -575,8 +630,5 @@ void Parser::check_id_in_read ()
     if ( !TID[c_val].get_declare() )
         throw "SEMANTIC ERROR: ID is not declared";
 }
-
-
- 
 ////////////////////////////////////////////////////////////////
  
